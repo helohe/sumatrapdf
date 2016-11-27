@@ -450,6 +450,15 @@ workspace "SumatraPDF"
     links { "unarrlib", "utils", "zlib" }
     links { "shlwapi" }
 
+  project "BrowserPlugin"
+    kind "SharedLib"
+    language "C++"
+    disablewarnings { "4100" }
+    filter {}
+    includedirs { "src", "src/utils", "src/browserplugin", "src/browserplugin/npapi" }
+    browser_plugin_files()
+    links { "utils" }
+    links { "comctl32", "shlwapi", "version"  }
 
   project "PdfFilter"
     kind "SharedLib"

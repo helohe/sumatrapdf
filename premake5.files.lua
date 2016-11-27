@@ -825,6 +825,20 @@ function pdf_preview_files()
   filter {}
 end
 
+function browser_plugin_files()
+  files_in_dir("src/browserplugin", {
+    "npPdfViewer.cpp",
+    "npPdfViewer.rc",
+  })
+  files_in_dir("src/browserplugin/npapi", {
+    "npapi.h",
+    "npfunctions.h",
+    "npruntime.h",
+    "nptypes.h",
+  })
+  filter {}
+end
+
 function pdf_filter_files()
   files_in_dir("src/ifilter", {
     "PdfFilter.*",

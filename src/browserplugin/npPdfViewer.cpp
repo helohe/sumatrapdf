@@ -62,8 +62,9 @@ int gTranslationIdx = 0;
 
 BOOL APIENTRY DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 {
+#if NOLOG == 0
     plogf("sp: DllMain() reason: %d (%s)", dwReason, DllMainReason(dwReason));
-
+#endif
     g_hInstance = hInstance;
     return TRUE;
 }
@@ -73,7 +74,7 @@ DLLEXPORT NPError WINAPI NP_GetEntryPoints(NPPluginFuncs *pFuncs)
     plogf("sp: NP_GetEntryPoints()");
     if (!pFuncs || pFuncs->size < sizeof(NPPluginFuncs))
         return NPERR_INVALID_FUNCTABLE_ERROR;
-    
+
     pFuncs->size = sizeof(NPPluginFuncs);
     pFuncs->version = (NP_VERSION_MAJOR << 8) | NP_VERSION_MINOR;
     pFuncs->newp = NPP_New;
@@ -90,7 +91,7 @@ DLLEXPORT NPError WINAPI NP_GetEntryPoints(NPPluginFuncs *pFuncs)
     pFuncs->javaClass = NULL;
     pFuncs->getvalue = NULL;
     pFuncs->setvalue = NULL;
-    
+
     return NPERR_NO_ERROR;
 }
 
@@ -108,9 +109,9 @@ DLLEXPORT NPError WINAPI NP_Initialize(NPNetscapeFuncs *pFuncs)
         plogf("sp: NP_Initialize() error: NPERR_INCOMPATIBLE_VERSION_ERROR");
         return NPERR_INCOMPATIBLE_VERSION_ERROR;
     }
-    
+
     gNPNFuncs = *pFuncs;
-    
+
     return NPERR_NO_ERROR;
 }
 
@@ -129,7 +130,7 @@ DLLEXPORT STDAPI DllRegisterServer(VOID)
         if (!CreateRegKey(hkey, g_lpRegKey))
             return E_UNEXPECTED;
     }
-    
+
     WCHAR szPath[MAX_PATH];
     GetModuleFileName(g_hInstance, szPath, MAX_PATH);
     if (!WriteRegStr(hkey, g_lpRegKey, L"Description", L"SumatraPDF Browser Plugin") ||
@@ -139,7 +140,7 @@ DLLEXPORT STDAPI DllRegisterServer(VOID)
     {
         return E_UNEXPECTED;
     }
-    
+
     static const WCHAR *mimeTypes[] = {
         L"application/pdf", L"application/vnd.ms-xpsdocument", L"application/oxps",
         L"image/vnd.djvu", L"image/x-djvu", L"image/x.djvu",
@@ -149,7 +150,7 @@ DLLEXPORT STDAPI DllRegisterServer(VOID)
         ScopedMem<WCHAR> keyName(str::Join(g_lpRegKey, L"\\MimeTypes\\", mimeTypes[i]));
         CreateRegKey(hkey, keyName);
     }
-    
+
     return S_OK;
 }
 
@@ -164,10 +165,10 @@ DLLEXPORT STDAPI DllUnregisterServer(VOID)
         if (str::StartsWithI(szModulePath, mozPluginPath))
             SHDeleteValue(HKEY_CURRENT_USER, L"Environment", L"MOZ_PLUGIN_PATH");
     }
-    
+
     DeleteRegKey(HKEY_LOCAL_MACHINE, g_lpRegKey);
     DeleteRegKey(HKEY_CURRENT_USER, g_lpRegKey);
-    
+
     return S_OK;
 }
 
@@ -180,7 +181,7 @@ bool GetExePath(WCHAR *lpPath, DWORD len)
     str::BufSet((WCHAR *)path::GetBaseName(lpPath), len - 2 - (path::GetBaseName(lpPath) - lpPath), L"SumatraPDF.exe");
     if (file::Exists(lpPath))
         return true;
-    
+
     *lpPath = '\0';
     // Try to get the path from the registry (set e.g. when making the default PDF viewer)
     ScopedMem<WCHAR> path(ReadRegStr(HKEY_CURRENT_USER, L"Software\\Classes\\SumatraPDF\\Shell\\Open\\Command", NULL));
@@ -312,33 +313,33 @@ WCHAR *FormatSizeSuccint(size_t size) {
         s /= KB;
         unit = _TR("KB");
     }
-    
+
     ScopedMem<WCHAR> sizestr(str::FormatFloatWithThousandSep(s));
     if (!unit)
         return sizestr.StealData();
-    
+
     return str::Format(L"%s %s", sizestr, unit);
 }
 
 LRESULT CALLBACK PluginWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 {
     NPP instance = (NPP)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-    
+
     if (uiMsg == WM_PAINT)
     {
         InstanceData *data = (InstanceData *)instance->pdata;
-        
+
         PAINTSTRUCT ps;
         HDC hDC = BeginPaint(hWnd, &ps);
         HBRUSH brushBg = CreateSolidBrush(COL_WINDOW_BG);
         HFONT hFont = CreateSimpleFont(hDC, L"MS Shell Dlg", 14);
         bool isRtL = IsLanguageRtL(gTranslationIdx);
-        
+
         // set up double buffering
         RectI rcClient = ClientRect(hWnd);
         DoubleBuffer buffer(hWnd, rcClient);
         HDC hDCBuffer = buffer.GetDC();
-        
+
         // display message centered in the window
         RECT rectClient = rcClient.ToRECT();
         FillRect(hDCBuffer, &rectClient, brushBg);
@@ -346,13 +347,13 @@ LRESULT CALLBACK PluginWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lPar
         SetTextColor(hDCBuffer, RGB(0, 0, 0));
         SetBkMode(hDCBuffer, TRANSPARENT);
         DrawCenteredText(hDCBuffer, rcClient, data->message, isRtL);
-        
+
         // draw a progress bar, if a download is in progress
         if (0 < data->progress && data->progress <= 1)
         {
             SIZE msgSize;
             RectI rcProgress = rcClient;
-            
+
             HBRUSH brushProgress = CreateSolidBrush(RGB(0x80, 0x80, 0xff));
             GetTextExtentPoint32(hDCBuffer, data->message, (int)str::Len(data->message), &msgSize);
             rcProgress.Inflate(-(rcProgress.dx - msgSize.cx) / 2, -(rcProgress.dy - msgSize.cy) / 2 + 2);
@@ -364,7 +365,7 @@ LRESULT CALLBACK PluginWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lPar
             rectProgress = rcProgress.ToRECT();
             FillRect(hDCBuffer, &rectProgress, brushProgress);
             DeleteObject(brushProgress);
-            
+
             ScopedMem<WCHAR> currSize(FormatSizeSuccint(data->currSize));
             if (0 == data->totalSize || data->currSize > data->totalSize)
             {
@@ -378,14 +379,14 @@ LRESULT CALLBACK PluginWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lPar
                 DrawCenteredText(hDCBuffer, rcProgressAll, s, isRtL);
             }
         }
-        
+
         // draw the buffer on screen
         buffer.Flush(hDC);
-        
+
         DeleteObject(SelectObject(hDCBuffer, hFont));
         DeleteObject(brushBg);
         EndPaint(hWnd, &ps);
-        
+
         HWND hChild = FindWindowEx(hWnd, NULL, NULL, NULL);
         if (hChild)
             InvalidateRect(hChild, NULL, FALSE);
@@ -409,7 +410,7 @@ LRESULT CALLBACK PluginWndProc(HWND hWnd, UINT uiMsg, WPARAM wParam, LPARAM lPar
             return TRUE;
         }
     }
-    
+
     return DefWindowProc(hWnd, uiMsg, wParam, lParam);
 }
 
@@ -438,7 +439,7 @@ NPError NP_LOADDS NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, in
     }
 
     gNPNFuncs.setvalue(instance, NPPVpluginWindowBool, (void *)true);
-    
+
     InstanceData *data = (InstanceData *)instance->pdata;
     bool ok = GetExePath(data->exepath, dimof(data->exepath));
     SelectTranslation(ok ? data->exepath : NULL);
@@ -446,7 +447,7 @@ NPError NP_LOADDS NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, in
         data->message = _TR("Opening document in SumatraPDF...");
     else
         data->message = _TR("Error: SumatraPDF hasn't been found!");
-    
+
     return NPERR_NO_ERROR;
 }
 
@@ -468,7 +469,7 @@ NPError NP_LOADDS NPP_SetWindow(NPP instance, NPWindow *npwin)
     else if (data->npwin != npwin)
     {
         HWND hWnd = (HWND)npwin->window;
-        
+
         data->npwin = npwin;
         SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)instance);
         SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)PluginWndProc);
@@ -478,14 +479,14 @@ NPError NP_LOADDS NPP_SetWindow(NPP instance, NPWindow *npwin)
         // The plugin's window hasn't changed, just its size
         HWND hWnd = (HWND)npwin->window;
         HWND hChild = FindWindowEx(hWnd, NULL, NULL, NULL);
-        
+
         if (hChild)
         {
             ClientRect rcClient(hWnd);
             MoveWindow(hChild, rcClient.x, rcClient.y, rcClient.dx, rcClient.dy, FALSE);
         }
     }
-    
+
     return NPERR_NO_ERROR;
 }
 
@@ -534,7 +535,7 @@ NPError NP_LOADDS NPP_NewStream(NPP instance, NPMIMEType type, NPStream* stream,
     data->progress = stream->end > 0 ? 0.01f : 0;
     data->prevProgress = -.1f;
     TriggerRepaintOnProgressChange(data);
-    
+
     return NPERR_NO_ERROR;
 }
 
@@ -711,7 +712,7 @@ NPError NP_LOADDS NPP_Destroy(NPP instance, NPSavedData** save)
         }
     }
     free(data);
-    
+
     return NPERR_NO_ERROR;
 }
 
@@ -738,7 +739,7 @@ void NP_LOADDS NPP_Print(NPP instance, NPPrint* platformPrint)
         InstanceData *data = (InstanceData *)instance->pdata;
         HWND hWnd = (HWND)data->npwin->window;
         HWND hChild = FindWindowEx(hWnd, NULL, NULL, NULL);
-        
+
         if (hChild)
         {
             PostMessage(hChild, WM_COMMAND, IDM_PRINT, 0);
