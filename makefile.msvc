@@ -141,6 +141,10 @@ MEMTRACE_DLL = $(O)\memtrace.dll
 MEMTRACE_RES = $(ODLL)\memtrace.res
 MEMTRACE_CFLAGS = $(SUMATRA_CFLAGS)
 
+BROWSER_PLUGIN = $(O)\npPdfViewer.dll
+BROWSER_PLUGIN_RES = $(ODLL)\npPdfViewer.res
+BROWSER_PLUGIN_CFLAGS = $(CFLAGS) /I$(SRCDIR)/utils
+
 ENGINEDUMP_APP = $(O)\EngineDump.exe
 MAKELZSA_APP = $(O)\MakeLzSA.exe
 TEST_UTIL_APP = $(O)\test_util.exe
@@ -236,6 +240,9 @@ PDFFILTER_OBJS = \
 PDFPREVIEW_OBJS = \
 	$(ODLL)\PdfPreviewDll.obj $(ODLL)\PdfPreview.obj $(PDFPREVIEW_RES) \
 	$(UTILS_LIB) $(LIBMUPDF_LIB) $(OS)\MuPDF_Exports.obj $(OS)\PdfEngine.obj
+
+BROWSER_PLUGIN_OBJS = \
+	$(ODLL)\npPdfViewer.obj $(BROWSER_PLUGIN_RES) $(UTILS_LIB)
 
 ENGINEDUMP_OBJS = \
 	$(OS)\EngineDump.obj $(ENGINES_LIB) $(FORMAT_LIBS) $(UTILS_LIB) $(OMUI)\MiniMui.obj $(OMUI)\TextRender.obj
@@ -363,6 +370,7 @@ mudraw:        $(O)  $(MUDRAW_APP)
 mutool:        $(O)  $(MUTOOL_APP)
 signfile:      $(OU) $(SIGNFILE_APP)
 plugin-test:   $(OU) $(PLUGIN_TEST_APP)
+BrowserPlugin: $(OS) $(BROWSER_PLUGIN)
 
 $(OS): $(O) $(OE)
 	@if not exist $(OS) mkdir $(OS)
@@ -421,6 +429,12 @@ $(MEMTRACE_RES): $(SRCDIR)\memtrace\MemTrace.rc
 
 $(MEMTRACE_DLL): $(MEMTRACE_OBJS)
 	$(LD) /DLL $(LDFLAGS) $** $(LIBS) /PDB:$*.pdb /OUT:$@
+	
+$(BROWSER_PLUGIN_RES): $(SRCDIR)\browserplugin\npPdfViewer.rc $(SRCDIR)\Version.h
+	rc /r /fo$@ $(RC_FLAGS) $(SRCDIR)\browserplugin\npPdfViewer.rc
+
+$(BROWSER_PLUGIN): $(BROWSER_PLUGIN_OBJS)
+	$(LD) /DLL $(LDFLAGS) $** $(LIBS) /PDB:$*.pdb /OUT:$@
 
 $(ENGINEDUMP_APP): $(ENGINEDUMP_OBJS)
 	$(LD) $(LDFLAGS) $** $(LIBS) /PDB:$*.pdb /OUT:$@ /SUBSYSTEM:CONSOLE
@@ -457,6 +471,9 @@ $(PLUGIN_TEST_APP): $(PLUGIN_TEST_OBJS)
 
 {$(SRCDIR)}.cpp{$(OS)}.obj::
 	$(CC) $(SUMATRA_CFLAGS) /Fo$(OS)\ /Fd$(O)\vc80.pdb $<
+	
+{$(SRCDIR)\browserplugin}.cpp{$(ODLL)}.obj::
+	$(CC) $(BROWSER_PLUGIN_CFLAGS) /Fo$(ODLL)\ /Fd$(O)\vc80.pdb $<
 
 {$(SRCDIR)\ifilter}.cpp{$(ODLL)}.obj::
 	$(CC) $(PDFFILTER_CFLAGS) /Fo$(ODLL)\ /Fd$(O)\vc80.pdb $<
