@@ -21,7 +21,7 @@ BEGIN
       VALUE "OriginalFilename", "npPdfViewer.dll"
       VALUE "ProductName",      "SumatraPDF Browser Plugin"
       VALUE "ProductVersion",   VER_RESOURCE_STR
-      VALUE "CompanyName",      "Simon Bünzli"
+      VALUE "CompanyName",      "Loreno Heer et al."
 
       VALUE "MIMEType", "application/pdf|application/vnd.ms-xpsdocument|image/vnd.djvu|application/oxps|image/x-djvu|image/x.djvu"
       VALUE "FileExtents", "pdf|xps|djvu|oxps"

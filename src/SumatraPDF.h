@@ -5,6 +5,13 @@
 #define FRAME_CLASS_NAME        L"SUMATRA_PDF_FRAME"
 #define SUMATRA_WINDOW_TITLE    L"SumatraPDF"
 
+// Extra options
+
+#define DISABLE_DOCUMENT_RESTRICTIONS
+
+// Adds a menu entry to create a shortcut file to the pdf
+// #define ENABLE_SAVE_SHORTCUT
+
 #define WEBSITE_MAIN_URL         L"http://www.sumatrapdfreader.org/"
 #define WEBSITE_MANUAL_URL       L"http://www.sumatrapdfreader.org/manual.html"
 #define WEBSITE_TRANSLATIONS_URL L"https://github.com/sumatrapdfreader/sumatrapdf/wiki/Contribute-translation"
